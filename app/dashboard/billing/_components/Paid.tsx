@@ -4,40 +4,42 @@ import { Button } from "@/components/ui/button"
 import { db } from "@/utils/db"
 import { UserSubscription } from "@/utils/schema"
 import { useUser } from "@clerk/nextjs"
-import { Description } from "@radix-ui/react-alert-dialog"
 import axios from 'axios'
+import { eq } from "drizzle-orm"
 import { Loader2Icon } from "lucide-react"
 import moment from "moment"
-import { useState } from "react"
-import { useRecoilValue } from "recoil"
+import { useEffect, useState } from "react"
+import { useRecoilState } from "recoil"
+
 
 
 function Paid() {
   const [loading, setLoading] = useState<boolean>(false)
   const {user} = useUser()
 
-  const isUserSubscribed = useRecoilValue(userSubscriptionAtom)
+  const [isUserSubscribed, setIsUserSubscribed] = useRecoilState(userSubscriptionAtom)
 
   const CreateSubscription = () => {
     setLoading(true)
     axios.post('/api/create-subscription', {})
     .then(response => {
-        console.log(response?.data)
         onPayment(response?.data?.id)
-    }, (error) => {setLoading(false)})
+    })
+    .catch(error => {setLoading(false)})
   }
 
   const onPayment = (subId: string) => {
     const options = {
-        "key": process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        "subscription_id": subId,
-        "name": 'LexiGen AI',
-        description: "Monthly Subscription",
-        handler: async(resp: any) => {
-            console.log(resp)
-            if(resp) SaveSubscription(resp?.razorpay_payment_id)
-            setLoading(false)
+      "key": process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      "subscription_id": subId,
+      "name": 'LexiGen AI',
+      description: "Monthly Subscription",
+      handler: async(resp: any) => {
+        if(resp) {
+          await SaveSubscription(resp?.razorpay_payment_id)
+          setLoading(false)
         }
+      }
     }
 
     // @ts-ignore
@@ -48,16 +50,54 @@ function Paid() {
 
   // After npm run db:push
   const SaveSubscription = async (paymentId: string) => {
-    const result = await db.insert(UserSubscription).values({
+    if (!paymentId || !user?.primaryEmailAddress?.emailAddress) return ;
+
+    try {
+      const result = await db.insert(UserSubscription).values({
         email: user?.primaryEmailAddress?.emailAddress || "",
         userName: user?.fullName || "",
         active: true,
         paymentId: paymentId,
         joinDate: moment().format('DD/MM/yyyy')
-    })
-    console.log(result)
-    if(result) window.location.reload();
+      })
+    
+      if(result) window.location.reload()
+      setIsUserSubscribed(true)
+    } catch(error) {
+      throw new Error('Failed to save subscription.')
+    }
   }
+
+
+
+
+  const fetchUserSubscription = async () => {
+    if (!user?.primaryEmailAddress?.emailAddress) return;
+
+    try {
+      const email = user?.primaryEmailAddress?.emailAddress as string;
+
+      const result = await db.select().from(UserSubscription)
+        .where(eq(UserSubscription.email, email));
+    
+      if (result.length > 0 && result[0].active) {
+        setIsUserSubscribed(true);
+      } else {
+        setIsUserSubscribed(false);
+      }
+    } catch(error) {
+      throw new Error('Failed to get subscription status.')
+    }
+    
+  };
+  
+  useEffect(() => {
+    if (user) fetchUserSubscription();
+  }, [user]);
+  
+
+
+
 
 
   return (

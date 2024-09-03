@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { useRecoilValue } from "recoil"
 
 
+
 function Free() {
   const isUserSubscribed = useRecoilValue(userSubscriptionAtom)
 
@@ -18,7 +19,9 @@ function Free() {
         <li>✓ 1 Month of History</li>
         <li>❌ 1 Year of History</li>
       </ul>
-      <Button disabled={isUserSubscribed} className="bg-gray-500 w-full p-5 rounded-full mt-5">Currently Active Plan</Button>
+      <Button disabled={isUserSubscribed} className="bg-gray-500 w-full p-5 rounded-full mt-5">
+        {isUserSubscribed ? '---' : "Currently Active Plan"}
+      </Button>
     </div>
   )
 }

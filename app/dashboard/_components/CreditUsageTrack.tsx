@@ -12,6 +12,7 @@ import { userSubscriptionAtom } from "@/app/(atom)/UserSubscriptionAtom"
 import { updateCredit } from "@/app/(atom)/UpdateCredit"
 
 
+
 function CreditUsageTrack() {
   const {user}: any = useUser()
   const [totalUsage, setTotalUsage] = useRecoilState(totalUsageAtom)
@@ -21,7 +22,6 @@ function CreditUsageTrack() {
   const [maxWords, setMaxWords] = useState<number>(50000)
 
   const updateCreditUsage = useRecoilValue(updateCredit)
-
 
 
   // #Bug -> fixed: instantly refresh as soon as the user uses his/her credit.
@@ -58,11 +58,14 @@ function CreditUsageTrack() {
   }
 
   useEffect(() => {
-    if (user) {
-      GetData();
-      IsUserSubscribed();
+    const fetchData = async () => {
+      if (user) {
+        await GetData();
+        await IsUserSubscribed();
+      }
     }
-  }, [user, setTotalUsage, totalUsage]);
+    fetchData()
+  }, [user]);
 
 
   return (

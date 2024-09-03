@@ -12,13 +12,12 @@ import { db } from "@/utils/db"
 import { AIOutput } from "@/utils/schema"
 import { useUser } from "@clerk/nextjs"
 import moment from "moment"
-import { useRecoilState, useRecoilValue } from "recoil"
+import { useRecoilValue, useSetRecoilState } from "recoil"
 import { totalUsageAtom } from "@/app/(atom)/TotalUsageAtom"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRouter } from "next/navigation"
 import { userSubscriptionAtom } from "@/app/(atom)/UserSubscriptionAtom"
 import { updateCredit } from "@/app/(atom)/UpdateCredit"
-
 
 
 interface PROPS {
@@ -32,8 +31,9 @@ function CreateNewContent(props: PROPS) {
   const selectedTemplate: TEMPLATE | undefined = Templates.find(item => item.slug === props.params['template-slug'])
   const [loading, setLoading] = useState(false)
   const [aiOutput, setAiOutput] = useState<string>('')
+  const [showAlert, setShowAlert] = useState(false)
 
-  const [updateCreditUsage, setUpadteCreditUsage] = useRecoilState(updateCredit)
+  const setUpdateCreditUsage = useSetRecoilState(updateCredit)
 
   const isUserSubscribed = useRecoilValue(userSubscriptionAtom)
 
@@ -44,31 +44,29 @@ function CreateNewContent(props: PROPS) {
   const {user} = useUser()
 
   const GenerateResponse = async (formData: any) => { // AI response
-    if(totalCreditUsed >= 50000&&!isUserSubscribed) {
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          You are out of credit. Upgrade Now!
-        </AlertDescription>
-      </Alert>
-
+    if(totalCreditUsed >= 50000 && !isUserSubscribed) {
+      setShowAlert(true);
       router.push('/dashboard/billing')
-      
       return ;
     }
-    setLoading(true)
-    const SelectedPrompt = selectedTemplate?.aiPrompt
 
+    setLoading(true)
+
+    const SelectedPrompt = selectedTemplate?.aiPrompt
     const FinalAiPrompt = JSON.stringify(formData)+", "+SelectedPrompt;
 
-    const result = await chatSession.sendMessage(FinalAiPrompt)
-
-    setAiOutput(result?.response.text())
-    await SaveInDb(formData, selectedTemplate?.slug, result?.response.text())
-    setLoading(false)
-
-    setUpadteCreditUsage(Date.now())
+    try {
+      const result = await chatSession.sendMessage(FinalAiPrompt)
+      const responseText = await result?.response.text();
+  
+      setAiOutput(responseText)
+      await SaveInDb(formData, selectedTemplate?.slug, result?.response.text())
+    } catch(error) {
+      throw new Error('Error generating response.')
+    } finally {
+      setLoading(false);
+      setUpdateCreditUsage(Date.now());
+    }
   }
 
   const SaveInDb = async (formData: any, slug: any, aiResponse: string) => {
@@ -89,6 +87,15 @@ function CreateNewContent(props: PROPS) {
 
   return (
     <div className="p-10">
+      {showAlert && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            You are out of credit. Upgrade Now!
+          </AlertDescription>
+        </Alert>
+      )}
       <Link href={'/dashboard'}>
         <Button> <ArrowLeft /> Back </Button>
       </Link>

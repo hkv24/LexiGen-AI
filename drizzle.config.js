@@ -6,3 +6,6 @@ export default {
       url: process.env.NEXT_PUBLIC_DRIZZLE_DB_URL
     }
 };
+
+// Need to change the razorpay api key to the live mode key.
+// Also for clerk

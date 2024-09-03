@@ -2,7 +2,6 @@
 import { db } from '@/utils/db'
 import React, { useEffect, useState } from 'react'
 import { AIOutput } from '@/utils/schema'
-import { eq } from 'drizzle-orm/expressions';
 import { Button } from '@/components/ui/button';
 // import TemplateList from '../../_components/TemplateList';
 
