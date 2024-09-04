@@ -15,7 +15,6 @@ function Body() {
   const getHistory = async () => {
     try {
         const history = await db.select().from(AIOutput)
-        console.log(history)
         setUserHistory(history)
     } catch (error) {
         console.error('Error fetching history:', error)
@@ -53,13 +52,6 @@ function Body() {
                 
             )
         })}
-        {/* <div className='grid grid-cols-8 p-2'>
-            <p className='col-span-3'>TEMPLATE</p>
-            <p className='col-span-3'>AI RESP</p>
-            <p>DATE</p>
-            <p>COPY</p>
-        </div>
-        <hr className='w-1/20 border-t-[5px] border-dotted border-t-[#5b7ff4] border-b-0 border-l-0 border-r-0' /> */}
     </div>
   )
 }
