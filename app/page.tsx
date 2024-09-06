@@ -1,11 +1,14 @@
 "use client"
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Icon, User } from "lucide-react";
+import { UserButton, useUser } from "@clerk/nextjs";
+import { ChevronRight, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter()
+
+  const {user} = useUser()
 
   const card = [
     {
@@ -35,10 +38,10 @@ export default function Home() {
       <div>
         <div className="flex justify-between items-center m-5 mx-20">
           <Image src={'/logo.svg'} height={60} width={60} alt="logo" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-primary">
             <h2 className="mx-10 text-xl text-gray-500">|</h2>
-            <User />
-            <p>Get Started</p>
+            {user ? <UserButton /> : <User />}
+            <p className="cursor-pointer" onClick={() => router.push('/dashboard')}>Get Started</p>
           </div>
         </div>
         <hr className="border" />
